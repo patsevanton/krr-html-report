@@ -250,7 +250,7 @@ spec:
   tls:
     - hosts:
         - krr.k8s.dev.corp
-      secretName: grafana-tls
+      secretName: krr-tls
   rules:
     - host: krr.k8s.dev.corp
       http:
