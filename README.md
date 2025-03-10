@@ -14,9 +14,7 @@ KRR получает данные из Prometheus и рассчитывает о
 ## Для работы KRR в кластере необходимо создать:
 
 ### Namespace
-
-<details>
-  <summary>Нажми, чтобы развернуть код ns.yaml</summary>
+Код ns.yaml
 ```yaml
 ---
 apiVersion: v1
@@ -24,12 +22,11 @@ kind: Namespace
 metadata:
   name: krr
 ```
-</details>
 
 ### ServiceAccount
-
+Код sa.yaml
 ```yaml
-# sa.yaml
+
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -39,9 +36,8 @@ metadata:
 ```
 
 ### ClusterRole и ClusterRoleBinding
-
+Код ClusterRole.yaml
 ```yaml
-# ClusterRole.yaml
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -86,8 +82,8 @@ rules:
       - watch
 ```
 
+Код ClusterRoleBinding.yaml
 ```yaml
-# ClusterRoleBinding.yaml
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -104,9 +100,8 @@ subjects:
 ```
 
 ### Deployment с контейнером KRR
-
+Код deploy.yaml
 ```yaml
-# deploy.yaml
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -173,9 +168,8 @@ spec:
 ```
 
 ### Service
-
+Код svc.yaml
 ```yaml
-# svc.yaml
 ---
 apiVersion: v1
 kind: Service
@@ -192,9 +186,8 @@ spec:
 ```
 
 ### Ingress для доступа к результатам
-
+Код ingress.yaml
 ```yaml
-# ingress.yaml
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -243,9 +236,9 @@ spec:
 
 ## Заключение
 
-KRR — мощный инструмент для автоматической оптимизации ресурсов в Kubernetes, который помогает экономить до **69% CPU** и **18% памяти**. Простота настройки и гибкость интеграции делают его отличным выбором для DevOps-инженеров.
-
-
+KRR — мощный инструмент для автоматической оптимизации ресурсов в Kubernetes, 
+который помогает экономить до **69% CPU** и **18% памяти**. 
+Простота настройки и гибкость интеграции делают его отличным выбором для DevOps-инженеров.
 
 # Особенности KRR
 
