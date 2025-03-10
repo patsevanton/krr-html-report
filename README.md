@@ -15,14 +15,16 @@ KRR получает данные из Prometheus и рассчитывает о
 
 ### Namespace
 
+<details>
+  <summary>Нажми, чтобы развернуть код ns.yaml</summary>
 ```yaml
-# ns.yaml
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: krr
 ```
+</details>
 
 ### ServiceAccount
 
