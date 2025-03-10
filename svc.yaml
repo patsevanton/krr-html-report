@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: krr-service
+  namespace: krr
+spec:
+  selector:
+    app: krr
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

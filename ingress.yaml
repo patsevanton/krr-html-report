@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: krr-ingress
+  namespace: krr
+  annotations:
+    cert-manager.io/cluster-issuer: cluster-issuer
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - krr.k8s.dev.corp
+      secretName: grafana-tls
+  rules:
+    - host: krr.k8s.dev.corp
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: krr-service
+                port:
+                  number: 80

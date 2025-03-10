@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: krr
+  namespace: krr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: krr
+  template:
+    metadata:
+      labels:
+        app: krr
+    spec:
+      serviceAccount: krr-service-account
+      serviceAccountName: krr-service-account
+      volumes:
+        - name: shared-storage
+          emptyDir: {}
+      containers:
+        - name: nginx
+          image: nginx:1.27.4
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /usr/share/nginx/html
+          ports:
+            - containerPort: 80
+        - name: krr
+          image: robustadev/krr:v1.22.0
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /output
+          env:
+            - name: COLUMNS # ширина html страницы регулируется с помощью переменной COLUMNS
+              value: "400"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do
+                TEMP_FILE="/output/index_tmp.html"
+                FINAL_FILE="/output/index.html"
+                python krr.py simple-limit \
+                  -p https://vmselect.corp/select/0/prometheus \
+                  --prometheus-label cluster -l dev \
+                  --allow-hpa \
+                  --cpu-min 100 \
+                  --cpu_request=100 \
+                  --cpu_limit=100 \
+                  --memory_buffer_percentage=30 \
+                  --oom_memory_buffer_percentage=40 \
+                  --use-oomkill-data \
+                  --formatter html \
+                  --fileoutput "$TEMP_FILE" && mv "$TEMP_FILE" "$FINAL_FILE";
+                sleep 1d;
+              done
+          resources:
+            limits:
+              memory: 2Gi
+            requests:
+              memory: 1Gi
