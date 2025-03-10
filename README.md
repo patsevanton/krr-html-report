@@ -264,6 +264,10 @@ spec:
                   number: 80
 ```
 
+## Разница с Kubernetes VPA
+
+На странице [Github KRR](https://github.com/robusta-dev/krr) показана разница с k8s VPA
+
 ## Заключение
 
 KRR — мощный инструмент для автоматической оптимизации ресурсов в Kubernetes, 
