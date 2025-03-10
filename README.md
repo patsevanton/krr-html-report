@@ -11,19 +11,101 @@ KRR получает данные из Prometheus и рассчитывает о
 - **CPU limit** может быть отключен или равен request.
 - **Память** рассчитывается по максимальному использованию + буфер.
 
-## Развертывание KRR в Kubernetes
+## Для работы KRR в кластере необходимо создать:
 
-Для работы KRR в кластере необходимо создать:
-- **Namespace** (`ns.yaml`)
-- **ServiceAccount** (`sa.yaml`)
-- **ClusterRole** и **ClusterRoleBinding** (`ClusterRole.yaml`, `ClusterRoleBinding.yaml`)
-- **Deployment** с контейнером KRR (`deploy.yaml`)
-- **Service** (`svc.yaml`)
-- **Ingress** для доступа к результатам (`ingress.yaml`)
-
-Пример `deploy.yaml`:
+### Namespace
 
 ```yaml
+# ns.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: krr
+```
+
+### ServiceAccount
+
+```yaml
+# sa.yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: krr-service-account
+  namespace: krr
+```
+
+### ClusterRole и ClusterRoleBinding
+
+```yaml
+# ClusterRole.yaml
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: krr-cluster-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - daemonsets
+      - deployments
+      - namespaces
+      - pods
+      - replicasets
+      - replicationcontrollers
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - deployments
+      - deployments/scale
+      - replicasets
+      - replicasets/scale
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+```
+
+```yaml
+# ClusterRoleBinding.yaml
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: krr-cluster-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: krr-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: krr-service-account
+    namespace: krr
+```
+
+### Deployment с контейнером KRR
+
+```yaml
+# deploy.yaml
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,24 +113,111 @@ metadata:
   namespace: krr
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: krr
   template:
+    metadata:
+      labels:
+        app: krr
     spec:
+      serviceAccount: krr-service-account
+      serviceAccountName: krr-service-account
+      volumes:
+        - name: shared-storage
+          emptyDir: {}
       containers:
+        - name: nginx
+          image: nginx:1.27.4
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /usr/share/nginx/html
+          ports:
+            - containerPort: 80
         - name: krr
           image: robustadev/krr:v1.22.0
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /output
+          env:
+            - name: COLUMNS
+              value: "400"
           command:
             - /bin/sh
             - -c
             - |
               while true; do
-                python krr.py simple-limit --formatter html --fileoutput /output/index.html;
+                TEMP_FILE="/output/index_tmp.html"
+                FINAL_FILE="/output/index.html"
+                python krr.py simple-limit \
+                  -p https://vmselect.corp/select/0/prometheus \
+                  --prometheus-label cluster -l dev \
+                  --allow-hpa \
+                  --cpu-min 100 \
+                  --cpu_request=100 \
+                  --cpu_limit=100 \
+                  --memory_buffer_percentage=30 \
+                  --oom_memory_buffer_percentage=40 \
+                  --use-oomkill-data \
+                  --formatter html \
+                  --fileoutput "$TEMP_FILE" && mv "$TEMP_FILE" "$FINAL_FILE";
                 sleep 1d;
               done
           resources:
-            requests:
-              memory: 1Gi
             limits:
               memory: 2Gi
+            requests:
+              memory: 1Gi
+```
+
+### Service
+
+```yaml
+# svc.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: krr-service
+  namespace: krr
+spec:
+  selector:
+    app: krr
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+```
+
+### Ingress для доступа к результатам
+
+```yaml
+# ingress.yaml
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: krr-ingress
+  namespace: krr
+  annotations:
+    cert-manager.io/cluster-issuer: cluster-issuer
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - krr.k8s.dev.corp
+      secretName: grafana-tls
+  rules:
+    - host: krr.k8s.dev.corp
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: krr-service
+                port:
+                  number: 80
 ```
 
 ## Использование KRR
