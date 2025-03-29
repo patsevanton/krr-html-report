@@ -9,7 +9,7 @@ KRR (Kubernetes Resource Recommender) — это CLI-инструмент для
 
 ## Зачем нужно KRR
 
-Согласно недавнему исследованию [Sysdig](https://sysdig.com/blog/millions-wasted-kubernetes/), в среднем кластеры Kubernetes имеют:
+Согласно исследованию [Sysdig](https://sysdig.com/blog/millions-wasted-kubernetes/), в среднем кластеры Kubernetes имеют:
 
 * 69% неиспользуемого процессора
 * 18% неиспользуемой памяти
